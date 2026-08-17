@@ -1,0 +1,29 @@
+{
+  "name": "instagram-mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remote MCP server for publishing Instagram carousels and single images. Bearer token identifies the member; each member maps to exactly one Instagram account.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "add-member": "tsx scripts/add-member.ts",
+    "refresh-tokens": "tsx scripts/refresh-tokens.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@supabase/supabase-js": "^2.49.0",
+    "mcp-handler": "^2.1.1",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
