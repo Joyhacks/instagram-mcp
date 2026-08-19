@@ -9,7 +9,7 @@ export function registerListRecentPosts(server: McpServer): void {
     {
       title: "List the caller's recent posts",
       description:
-        "List the calling member's own recent posts from this server's publish log —"never a " +
+        "List the calling member's own recent posts from this server's publish log — never a " +
         "teammate's. Shows status (pending / published / failed), caption, permalink, and the error " +
         "message for failures. Use it to confirm whether a publish landed before retrying, or to " +
         "grab the permalink of something published earlier.",
