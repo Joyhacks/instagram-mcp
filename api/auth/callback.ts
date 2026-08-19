@@ -7,8 +7,9 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const APP_ID = process.env.IG_APP_ID!;
 const APP_SECRET = process.env.IG_APP_SECRET!;
-const BASE_URL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
+// Use the stable production URL, not the deployment-specific VERCEL_URL
+const BASE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : "https://instagram-mcp-nu.vercel.app";
 const REDIRECT_URI = `${BASE_URL}/api/auth/callback`;
 
@@ -96,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   --name "Adeola Ilori" \\
   --ig-user-id ${userId} \\
   --ig-username adeola.builds</pre>
-    <p>Paste the token above when prompted. The token is encrypted and stored — this page is now safe to close.</p>
+    <p>Paste the token above when prompted. The token is encrypted and stored.</p>
 
     <script>
       function copy(id) {
