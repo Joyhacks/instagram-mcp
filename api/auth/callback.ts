@@ -7,11 +7,8 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const APP_ID = process.env.IG_APP_ID!;
 const APP_SECRET = process.env.IG_APP_SECRET!;
-// Use the stable production URL, not the deployment-specific VERCEL_URL
-const BASE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : "https://instagram-mcp-nu.vercel.app";
-const REDIRECT_URI = `${BASE_URL}/api/auth/callback`;
+// Hardcoded to eliminate any env-var mismatch with Meta's registered redirect URI
+const REDIRECT_URI = "https://instagram-mcp-nu.vercel.app/api/auth/callback";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { code, error, error_reason, error_description } = req.query;
@@ -52,6 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(502).send(html(`
       <h2 style="color:red">Token Exchange Failed</h2>
       <pre>${JSON.stringify(shortBody, null, 2)}</pre>
+      <p><b>REDIRECT_URI used:</b> <code>${REDIRECT_URI}</code></p>
+      <p><b>APP_ID used:</b> <code>${APP_ID}</code></p>
     `));
   }
 
@@ -97,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   --name "Adeola Ilori" \\
   --ig-user-id ${userId} \\
   --ig-username adeola.builds</pre>
-    <p>Paste the token above when prompted. The token is encrypted and stored.</p>
+    <p>Paste the token above when prompted. The token is encrypted and stored — this page is now safe to close.</p>
 
     <script>
       function copy(id) {
