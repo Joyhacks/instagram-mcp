@@ -24,7 +24,7 @@ vi.mock("../src/db.js", async (importOriginal) => {
       const existing = postsStore.find((p) => p.idempotency_key === row.idempotency_key);
       if (existing) return { post: { ...existing }, created: false };
       const post: PostRow = {
-        id: `post-${+++ostSeq}`,
+        id: `post-${++postSeq}`,
         member_id: row.member_id,
         ig_media_id: null,
         permalink: null,
@@ -40,11 +40,11 @@ vi.mock("../src/db.js", async (importOriginal) => {
       postsStore.push(post);
       return { post: { ...post }, created: true };
     }),
-    updatePost: vi.fn async (postId: string, patch: Partial<PostRow>) => {
+    updatePost: vi.fn(async (postId: string, patch: Partial<PostRow>) => {
       const post = postsStore.find((p) => p.id === postId);
       if (post) Object.assign(post, patch);
     }),
-    findPostByIdempotencyKey: vi.fn async (key: string) => {
+    findPostByIdempotencyKey: vi.fn(async (key: string) => {
       const post = postsStore.find((p) => p.idempotency_key === key);
       return post ? { ...post } : null;
     }),
@@ -137,7 +137,7 @@ const IMAGE_URLS = [
   BAD_URL,
   "https://cdn.example.com/slide-4.png",
 ];
-const CAPPION = "Four slides on shipping boring software. #buildinpublic";
+const CAPTION = "Four slides on shipping boring software. #buildinpublic";
 
 beforeEach(() => {
   vi.stubGlobal("fetch", fetchStub);
