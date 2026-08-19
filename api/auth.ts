@@ -11,8 +11,9 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const APP_ID = process.env.IG_APP_ID!;
 const APP_SECRET = process.env.IG_APP_SECRET!;
-const BASE_URL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
+// Use the stable production URL, not the deployment-specific VERCEL_URL
+const BASE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : "https://instagram-mcp-nu.vercel.app";
 const REDIRECT_URI = `${BASE_URL}/api/auth/callback`;
 
