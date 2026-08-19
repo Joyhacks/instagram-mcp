@@ -4,18 +4,20 @@
  * GET /api/auth          → redirects to Instagram OAuth consent screen
  * GET /api/auth/callback → exchanges the code, shows the long-lived token
  *
- * Protected by CRON_SECRET so only the admin can start a flow.
+ * This endpoint exists solely to let the admin seed team members without
+ * needing a separate OAuth client. It is protected by CRON_SECRET so
+ * strangers cannot initiate flows.
+ *
+ * Once you have copied the long-lived token, run:
+ *   npm run add-member -- --name "..." --ig-user-id ... --ig-username ...
+ * and paste the token when prompted.
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const APP_ID = process.env.IG_APP_ID!;
-const APP_SECRET = process.env.IG_APP_SECRET!;
-// Use the stable production URL, not the deployment-specific VERCEL_URL
-const BASE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : "https://instagram-mcp-nu.vercel.app";
-const REDIRECT_URI = `${BASE_URL}/api/auth/callback`;
+// Hardcoded to eliminate any env-var mismatch with Meta's registered redirect URI
+const REDIRECT_URI = "https://instagram-mcp-nu.vercel.app/api/auth/callback";
 
 const SCOPES = [
   "instagram_business_basic",
@@ -23,6 +25,7 @@ const SCOPES = [
 ].join(",");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Simple guard: require ?secret=CRON_SECRET so only the admin can start a flow
   const secret = process.env.CRON_SECRET;
   if (secret && req.query.secret !== secret) {
     return res.status(401).send("Unauthorized. Add ?secret=<CRON_SECRET> to the URL.");
