@@ -1,16 +1,16 @@
 # instagram-mcp
 
-A remote MCP server that lets each team member publish Instagram carousels and single images directly from a Claude conversation — to **their own** Instagram professional account, and nobody else's.
+A remote MCP server that lets each team member publish Instagram carousels and single images directly from a Claude conversation. Each person posts to **their own** Instagram professional account and nobody else's.
 
 The bearer token identifies the person. The person maps to exactly one Instagram account in the database. No tool ever takes an Instagram account id as a parameter, so posting to a teammate's account by passing the wrong id is structurally impossible.
 
-The Meta app runs in **Development mode** with every team member added as an **Instagram Tester** — No Meta App Review, no OAuth login flow, no going Live. That is deliberate.
+The Meta app runs in **Development mode** with every team member added as an **Instagram Tester**. No Meta App Review, no OAuth login flow, no going Live. That is deliberate.
 
 ---
 
 ## Connect it to Claude (send this section to a teammate as-is)
 
-You need two things from the admin: the server URL and **your personal access token** (starts with `igmcp_`). Keep the token like a password — anyone holding it can post to your Instagram account.
+You need two things from the admin: the server URL and **your personal access token** (starts with `igmcp_`). Treat the token like a password: anyone holding it can post to your Instagram account.
 
 1. In Claude, open **Settings → Connectors → Add custom connector**.
 2. Paste this URL:
@@ -20,7 +20,7 @@ You need two things from the admin: the server URL and **your personal access to
    ```
 
    *(the admin will give you the real hostname)*
-3. Where the connector asks for authentication, add this header — Name on the left, value on the right:
+3. Where the connector asks for authentication, add this header (name on the left, value on the right):
 
    ```
    Authorization: Bearer igmcp_your_token_here
@@ -37,7 +37,7 @@ What you can ask Claude to do:
 - **Check your token health** (your Instagram connection auto-renews well before it expires; this tells you if anything's wrong)
 - **List your recent posts** (only ever yours)
 
-If a publish fails halfway, just ask Claude to try the same publish again — the server resumes where it left off and will not double-post.
+If a publish fails halfway, just ask Claude to try the same publish again. The server resumes where it left off and will not double-post.
 
 ---
 
@@ -87,10 +87,10 @@ instagram-mcp/
 
 Key decisions:
 
-- **Transport**: [`mcp-handler`](https://www.npmjs.com/package/mcp-handler) v2 (Vercel's MCP adapter) with `@modelcontextprotocol/server` v2 — Streamable HTTP only; the deprecated HTTP+SSE transport was removed upstream in v2, which is exactly what we want. No hand-rolled transport.
-- **Host**: everything talks to `https://graph.instagram.com` (Instagram Login path). `graph.facebook.com` belongs to the Facebook Login path and fails with a misleading token-parse error — most tutorials get this wrong.
+- **Transport**: [`mcp-handler`](https://www.npmjs.com/package/mcp-handler) v2 (Vercel's MCP adapter) with `@modelcontextprotocol/server` v2. Streamable HTTP only, since v2 removed the deprecated HTTP+SSE transport. No hand-rolled transport.
+- **Host**: everything talks to `https://graph.instagram.com` (Instagram Login path). `graph.facebook.com` belongs to the Facebook Login path and fails with a misleading token-parse error. Most tutorials get this wrong.
 - **Auth**: `Authorization: Bearer <token>` on every request. The token is hashed (SHA-256), looked up, and re-checked with a constant-time comparison; unknown and revoked tokens 401 before any processing. Instagram tokens live AES-256-GCM-encrypted in Postgres; bearer tokens are never stored raw.
-- **Idempotency**: the idempotency key (member + image URLs + caption) is written to `posts` before any Meta call. Child container ids are persisted as they're created. A retry reuses FINISHED children, recreates only EXPBREDERRORed ones, and re-publishing the same parent container id is safe (`media_publish` is idempotent per container) — so a half-published carousel can never duplicate.
+- **Idempotency**: the idempotency key (member + image URLs + caption) is written to `posts` before any Meta call. Child container ids are persisted as they're created. A retry reuses FINISHED children, recreates only the EXPIRED or ERROR ones, and re-publishing the same parent container id is safe (`media_publish` is idempotent per container), so a half-published carousel can never duplicate.
 - **Token refresh**: Vercel Cron runs **daily**; tokens last 60 days and each is refreshed once it enters a 25-day renewal window, so a failed run gets a fresh retry every 24h rather than one shot per month. One member failing never aborts the loop; permanent failures (revoked access, account-type change) mark the row and surface through `check_token_health` instead of retrying forever.
 
 ## Deploying (admin)
@@ -107,7 +107,7 @@ vercel --prod
 
 Then put the deployment URL into the "Connect it to Claude" section above.
 
-**Supabase must be a dedicated project** that hosts only this server — not a project shared with another app. `team_members` and `posts` are generic names and the service-role client has full table access, so sharing a schema with an unrelated product is a collision (and blast-radius) risk. Create the project under your own account, then apply the migration in `supabase/migrations/` via the SQL editor or the Supabase MCP connector.
+**Supabase must be a dedicated project** that hosts only this server, not a project shared with another app. `team_members` and `posts` are generic names and the service-role client has full table access, so sharing a schema with an unrelated product is a collision (and blast-radius) risk. Create the project under your own account, then apply the migration in `supabase/migrations/` via the SQL editor or the Supabase MCP connector.
 
 R2 bucket needs public access enabled (custom domain or r2.dev) matching `R2_PUBLIC_BASE_URL`.
 
@@ -123,7 +123,7 @@ LIVE_MEMBER_BEARER_TOKEN=igmcp_... LIVE_PUBLISH=1 npm test   # ⚠ creates REAL 
 
 ## Operational notes
 
-- **Quiet failure mode #1 is an expired token** — posting stops and nobody notices. The cron marks failures loudly (non-200 → red run in the Vercel dashboard) and `check_token_health` reports days-to-expiry and refresh failures per member.
+- **The quiet failure is an expired token.** Posting stops and nobody notices. The cron marks failures loudly (non-200 → red run in the Vercel dashboard) and `check_token_health` reports days-to-expiry and refresh failures per member.
 - Instagram caps publishing at **100 posts per account per rolling 24h**; `get_publishing_limit` reads the live counter.
-- Containers expire after ~24h and there's a ceiling of ~50 pending containers per account — another reason the retry path reuses containers instead of minting new ones.
+- Containers expire after ~24h and there's a ceiling of ~50 pending containers per account, which is another reason the retry path reuses containers instead of minting new ones.
 - Keep carousel slides the **same aspect ratio**; Instagram crops everything to match the first slide. JPEG/PNG only, ≤ 8 MB.
